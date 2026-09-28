@@ -50,6 +50,10 @@
     pointer-events: none;
   }
   .page a, .page .card { pointer-events: auto; }
+  /* the crosshair is drawn on the canvas; system cursor stays on links and the card */
+  body.aim { cursor: none; }
+  body.aim .page a { cursor: pointer; }
+  body.aim .page .card { cursor: auto; }
 
   .brand { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; text-decoration: none; color: var(--text); }
   .logo { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(145deg, #FFE27A, var(--accent) 55%, #F2B705); display: grid; place-items: center; box-shadow: 0 6px 18px rgba(255,210,63,.3), inset 0 1px 0 rgba(255,255,255,.5); transform: rotate(-6deg); }
@@ -247,11 +251,23 @@
     if (caught === 5) { status.textContent = 'исправлен'; status.style.setProperty('--st', 'var(--mint)'); }
     setTimeout(() => spawn(false), 900);
   }
-  addEventListener('pointerdown', e => {
-    if (e.target.closest('a, .card')) return;
+  const mouse = { x: -100, y: -100, on: false, pulse: 0 };
+  const overUi = e => !!(e.target.closest && e.target.closest('a, .card'));
+  addEventListener('pointermove', e => {
+    mouse.x = e.clientX; mouse.y = e.clientY;
+    mouse.on = e.pointerType === 'mouse' && !overUi(e);
+    document.body.classList.toggle('aim', e.pointerType === 'mouse');
+  });
+  document.documentElement.addEventListener('mouseleave', () => { mouse.on = false; });
+  function bugAt(x, y, minR) {
     let best = null, bd = Infinity;
-    const minR = e.pointerType === 'mouse' ? 22 : 34;
-    for (const b of bugs) { const d = Math.hypot(b.x - e.clientX, b.y - e.clientY); if (d < Math.max(minR, b.s * 1.5) && d < bd) { bd = d; best = b; } }
+    for (const b of bugs) { const d = Math.hypot(b.x - x, b.y - y); if (d < Math.max(minR, b.s * 1.5) && d < bd) { bd = d; best = b; } }
+    return best;
+  }
+  addEventListener('pointerdown', e => {
+    if (overUi(e)) return;
+    mouse.pulse = 1;
+    const best = bugAt(e.clientX, e.clientY, e.pointerType === 'mouse' ? 22 : 34);
     if (best) squash(best);
   });
 
@@ -276,6 +292,19 @@
       p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .9; p.vy *= .9;
       ctx.globalAlpha = 1 - p.age / p.life; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
     ctx.globalAlpha = 1;
+    mouse.pulse = Math.max(0, mouse.pulse - dt * 6);
+    if (mouse.on) {
+      const hov = bugAt(mouse.x, mouse.y, 22);
+      const col = hov ? '#FF5C7A' : '#FFD23F', r = (hov ? 13 : 17) - mouse.pulse * 6;
+      ctx.save(); ctx.translate(mouse.x, mouse.y);
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.shadowColor = col; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowBlur = 0;
+      if (hov && !reduce) ctx.rotate(t * 2);
+      for (let i = 0; i < 4; i++) { ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.moveTo(r + 3, 0); ctx.lineTo(r + 9, 0); ctx.stroke(); }
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
