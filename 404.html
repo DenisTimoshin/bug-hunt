@@ -44,8 +44,9 @@
     position: relative; z-index: 1;
     min-height: 100vh; min-height: 100dvh;
     max-width: 640px; margin: 0 auto;
-    padding-block: 40px;
-    display: flex; flex-direction: column; justify-content: center; gap: 28px;
+    /* vertical rhythm scales with viewport height so the page fits without a scrollbar */
+    padding-block: clamp(16px, 3vh, 40px);
+    display: flex; flex-direction: column; justify-content: center; gap: clamp(14px, 2.6vh, 28px);
     pointer-events: none;
   }
   .page a, .page .card { pointer-events: auto; }
@@ -56,9 +57,9 @@
 
   .code {
     margin: 0; font-family: var(--display); font-weight: 800;
-    font-size: clamp(96px, 26vw, 176px); line-height: .9; letter-spacing: -0.05em;
+    font-size: clamp(80px, min(26vw, 21vh), 176px); line-height: .9; letter-spacing: -0.05em;
     display: flex; align-items: baseline;
-    margin-bottom: 34px;
+    margin-bottom: clamp(22px, 4vh, 34px);
   }
   .code .zero { color: var(--accent); text-decoration: underline wavy var(--coral); text-decoration-thickness: 5px; text-underline-offset: 18px; text-decoration-skip-ink: none; margin-inline: .02em; }
   h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(22px, 5vw, 30px); line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
@@ -105,7 +106,6 @@
   .hint b { color: var(--text); font-variant-numeric: tabular-nums; }
 
   @media (max-width: 520px) {
-    .page { padding-block: 24px; gap: 22px; }
     dl { grid-template-columns: 1fr; padding-inline: 16px; }
     dt { padding-bottom: 0; border-bottom: 0; }
     dd { padding-top: 4px; }
