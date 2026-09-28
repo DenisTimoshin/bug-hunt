@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>404 — страница не найдена · Охота на баги</title>
+<meta name="description" content="Такой страницы нет. Вернитесь в игру «Охота на баги» — QA-тренажёр для начинающих тестировщиков.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0C0D1A">
+<!-- Абсолютные пути: GitHub Pages отдаёт эту страницу по любому несуществующему адресу, на любой глубине. -->
+<link rel="icon" type="image/png" sizes="32x32" href="/bug-hunt/assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/bug-hunt/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0C0D1A; --panel: #15172A; --panel-2: #1D2038;
+    --edge: rgba(255,255,255,.08); --edge-2: rgba(255,255,255,.12);
+    --text: #F1F2FA; --muted: #9095B4;
+    --accent: #FFD23F; --accent-deep: #C79A12; --coral: #FF5C7A; --mint: #3DDC97; --lilac: #A594FF; --orange: #FF9A4D;
+    --display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+    --body: 'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { min-height: 100%; margin: 0; }
+  body {
+    background:
+      radial-gradient(800px 500px at 90% -15%, rgba(165,148,255,.22) 0%, transparent 60%),
+      radial-gradient(700px 480px at -10% 115%, rgba(255,92,122,.16) 0%, transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    padding-inline: 16px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #bugs { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+
+  .page {
+    position: relative; z-index: 1;
+    min-height: 100vh; min-height: 100dvh;
+    max-width: 640px; margin: 0 auto;
+    padding-block: 40px;
+    display: flex; flex-direction: column; justify-content: center; gap: 28px;
+    pointer-events: none;
+  }
+  .page a, .page .card { pointer-events: auto; }
+
+  .brand { display: inline-flex; align-items: center; gap: 10px; align-self: flex-start; text-decoration: none; color: var(--text); }
+  .logo { width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(145deg, #FFE27A, var(--accent) 55%, #F2B705); display: grid; place-items: center; box-shadow: 0 6px 18px rgba(255,210,63,.3), inset 0 1px 0 rgba(255,255,255,.5); transform: rotate(-6deg); }
+  .brand-name { font-family: var(--display); font-weight: 800; font-size: 16px; }
+
+  .code {
+    margin: 0; font-family: var(--display); font-weight: 800;
+    font-size: clamp(96px, 26vw, 176px); line-height: .9; letter-spacing: -0.05em;
+    display: flex; align-items: baseline;
+    margin-bottom: 34px;
+  }
+  .code .zero { color: var(--accent); text-decoration: underline wavy var(--coral); text-decoration-thickness: 5px; text-underline-offset: 18px; text-decoration-skip-ink: none; margin-inline: .02em; }
+  h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(22px, 5vw, 30px); line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
+  .lead { margin: 10px 0 0; color: #C8CBE0; line-height: 1.55; max-width: 52ch; }
+
+  /* bug report card */
+  .card {
+    background:
+      linear-gradient(rgba(21,23,42,.92), rgba(21,23,42,.92)) padding-box,
+      linear-gradient(140deg, rgba(255,210,63,.5), rgba(165,148,255,.3) 45%, rgba(255,92,122,.35)) border-box;
+    border: 1.5px solid transparent;
+    border-radius: 22px;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    box-shadow: 0 30px 70px rgba(0,0,0,.45);
+    overflow: hidden;
+  }
+  .card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--edge); background: rgba(0,0,0,.18); font-family: var(--mono); font-size: 12.5px; }
+  .card-head .id { color: var(--muted); }
+  .chip { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 7px; color: #121320; background: var(--c); }
+  .status { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px 3px 8px; border-radius: 99px; font-weight: 700; color: var(--st); background: color-mix(in srgb, var(--st) 14%, transparent); transition: color .3s, background-color .3s; }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+  dl { margin: 0; padding: 6px 18px 8px; display: grid; grid-template-columns: max-content 1fr; }
+  dt, dd { padding-block: 10px; border-bottom: 1px dashed rgba(255,255,255,.07); }
+  dl > :nth-last-child(-n+2) { border-bottom: 0; }
+  dt { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding-right: 18px; padding-top: 12px; }
+  dd { margin: 0; line-height: 1.5; min-width: 0; }
+  dd ol { margin: 0; padding-left: 18px; }
+  dd code { font-family: var(--mono); font-size: 13px; color: var(--accent); word-break: break-all; }
+  .actual { color: #FF9CAF; }
+
+  .actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
+    background: linear-gradient(180deg, #FFE27A, var(--accent)); color: #1B1606;
+    font-family: var(--display); font-weight: 700; font-size: 15px;
+    border-radius: 16px; padding: 16px 24px;
+    box-shadow: 0 6px 0 var(--accent-deep), 0 14px 30px rgba(255,210,63,.28);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--accent-deep), 0 18px 34px rgba(255,210,63,.32); }
+  .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--accent-deep); }
+  .btn:focus-visible, .brand:focus-visible { outline: 3px solid var(--lilac); outline-offset: 3px; border-radius: 16px; }
+  .hint { font-size: 13px; color: var(--muted); }
+  .hint b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 520px) {
+    .page { padding-block: 24px; gap: 22px; }
+    dl { grid-template-columns: 1fr; padding-inline: 16px; }
+    dt { padding-bottom: 0; border-bottom: 0; }
+    dd { padding-top: 4px; }
+    .card-head { padding: 12px 16px; }
+    .btn { flex: 1; justify-content: center; }
+    .actions .hint { flex-basis: 100%; text-align: center; }
+  }
+  @media (prefers-reduced-motion: reduce) { .btn, .status { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="bugs" aria-hidden="true"></canvas>
+
+<main class="page">
+  <a class="brand" href="/bug-hunt/">
+    <span class="logo" aria-hidden="true">
+      <svg width="21" height="21" viewBox="0 0 24 24">
+        <g stroke="#1B1606" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M7 9.5L4 7.5M6.5 13.5H3M7 17.5l-3 2M17 9.5l3-2M17.5 13.5H21M17 17.5l3 2M10 5.5L8.5 3M14 5.5L15.5 3"/></g>
+        <ellipse cx="12" cy="14" rx="5.5" ry="6.5" fill="#1B1606"/><circle cx="12" cy="7.2" r="3" fill="#1B1606"/>
+        <circle cx="10.8" cy="6.8" r="1" fill="#FFD23F"/><circle cx="13.2" cy="6.8" r="1" fill="#FFD23F"/>
+      </svg>
+    </span>
+    <span class="brand-name">Охота на баги</span>
+  </a>
+
+  <div>
+    <p class="code" aria-hidden="true">4<span class="zero">0</span>4</p>
+    <h1>Страница не найдена</h1>
+    <p class="lead">Похоже, этот адрес уполз в прод без тестов. Мы уже завели на него баг-репорт — по всем правилам.</p>
+  </div>
+
+  <section class="card" aria-label="Баг-репорт">
+    <div class="card-head">
+      <span class="id">BUG-404</span>
+      <span class="chip" style="--c: var(--orange)">Major</span>
+      <span class="status" id="status" style="--st: var(--coral)">открыт</span>
+    </div>
+    <dl>
+      <dt>Шаги</dt>
+      <dd><ol><li>Перейти по адресу <code id="path">/bug-hunt/…</code></li><li>Дождаться загрузки страницы</li></ol></dd>
+      <dt>Ожидаемый результат</dt>
+      <dd>Открывается нужная страница</dd>
+      <dt>Фактический результат</dt>
+      <dd class="actual">Сервер вернул 404 Not Found</dd>
+      <dt>Окружение</dt>
+      <dd id="env">Браузер</dd>
+    </dl>
+  </section>
+
+  <div class="actions">
+    <a class="btn" href="/bug-hunt/">Вернуться в игру
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+    <span class="hint" id="hint">Пока ждёшь — поймай жуков на фоне</span>
+  </div>
+</main>
+
+<script>
+(() => {
+  // --- bug report details ---
+  document.getElementById('path').textContent = decodeURIComponent(location.pathname) || '/';
+  const ua = navigator.userAgent;
+  const browser = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /YaBrowser/.test(ua) ? 'Яндекс Браузер' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Браузер';
+  const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
+  document.getElementById('env').textContent = `${browser}${os ? ', ' + os : ''} · экран ${screen.width}×${screen.height}`;
+
+  // --- background bugs you can squash ---
+  const cvs = document.getElementById('bugs'), ctx = cvs.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W = 0, H = 0, DPR = 1;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const lerpAngle = (a, b, t) => { const d = Math.atan2(Math.sin(b - a), Math.cos(b - a)); return a + d * Math.min(1, t); };
+  function shade(hex, amt) {
+    const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255, t = amt > 0 ? 255 : 0, k = Math.abs(amt);
+    const m = v => Math.round(v + (t - v) * k); return `rgb(${m(r)},${m(g)},${m(b)})`;
+  }
+  const PAL = ['#A9B8D6', '#3DDC97', '#FFD23F', '#FF9A4D', '#FF5C7A'].map(c => ({ color: c, light: shade(c, .55), dark: shade(c, -.55), mid: shade(c, -.2) }));
+
+  function resize() {
+    DPR = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+    cvs.width = W * DPR; cvs.height = H * DPR;
+    for (const b of bugs) if (b.x < -40 || b.x > W + 40 || b.y < -40 || b.y > H + 40) { b.x = rand(40, W - 40); b.y = rand(40, H - 40); }
+  }
+  let bugs = [];
+  addEventListener('resize', resize); resize();
+
+  function drawBug(c, x, y, a, s, P, walk, t, seed) {
+    c.save(); c.translate(x, y);
+    c.fillStyle = 'rgba(0,0,0,.32)'; c.beginPath(); c.ellipse(2, 5, s * 1.05, s * .8, a, 0, Math.PI * 2); c.fill();
+    c.rotate(a);
+    c.strokeStyle = P.dark; c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = Math.max(1.6, s * .13);
+    const ph = walk / Math.max(8, s) * 4.2;
+    for (let i = 0; i < 3; i++) { const lx = (i - 1) * s * .45;
+      for (const sd of [-1, 1]) { const phase = (i % 2 ? Math.PI : 0) + (sd < 0 ? 0 : Math.PI), sw = Math.sin(ph + phase) * s * .28;
+        c.beginPath(); c.moveTo(lx, sd * s * .3); c.lineTo(lx + sw * .5 + (i - 1) * s * .15, sd * s * .82); c.lineTo(lx + sw + (i - 1) * s * .35, sd * s * 1.1); c.stroke(); } }
+    c.lineWidth = Math.max(1.2, s * .08);
+    const aw = Math.sin(ph * .6 + t * 3) * s * .12, tips = [[s * 1.42 + aw, -s * .6], [s * 1.42 - aw, s * .6]];
+    c.beginPath(); c.moveTo(s * .8, -s * .14); c.quadraticCurveTo(s * 1.2, -s * .2, tips[0][0], tips[0][1]); c.stroke();
+    c.beginPath(); c.moveTo(s * .8, s * .14); c.quadraticCurveTo(s * 1.2, s * .2, tips[1][0], tips[1][1]); c.stroke();
+    c.fillStyle = P.color; for (const [tx, ty] of tips) { c.beginPath(); c.arc(tx, ty, Math.max(1.6, s * .12), 0, Math.PI * 2); c.fill(); }
+    const g = c.createRadialGradient(-s * .35, -s * .3, s * .05, -s * .12, 0, s * .95);
+    g.addColorStop(0, P.light); g.addColorStop(.5, P.color); g.addColorStop(1, P.mid);
+    c.fillStyle = g; c.beginPath(); c.ellipse(-s * .12, 0, s * .8, s * .62, 0, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(10,10,25,.35)'; c.lineWidth = Math.max(1, s * .06); c.beginPath(); c.moveTo(s * .42, 0); c.lineTo(-s * .9, 0); c.stroke();
+    c.fillStyle = 'rgba(10,10,25,.22)';
+    for (const [sx, sy, sr] of [[-.35, .3, .14], [.08, .3, .1]]) { c.beginPath(); c.arc(sx * s, sy * s, sr * s, 0, Math.PI * 2); c.fill(); c.beginPath(); c.arc(sx * s, -sy * s, sr * s, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = 'rgba(255,255,255,.38)'; c.beginPath(); c.ellipse(-s * .2, -s * .3, s * .3, s * .1, -.2, 0, Math.PI * 2); c.fill();
+    c.fillStyle = P.dark; c.beginPath(); c.ellipse(s * .64, 0, s * .34, s * .4, 0, 0, Math.PI * 2); c.fill();
+    const er = s * .17, blink = ((t + seed) % 3.4) < .12;
+    for (const sd of [-1, 1]) { const ex = s * .74, ey = sd * s * .19; c.fillStyle = '#fff';
+      if (blink) { c.fillRect(ex - er, ey - s * .02, er * 2, Math.max(1, s * .05)); continue; }
+      c.beginPath(); c.arc(ex, ey, er, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#12131F'; c.beginPath(); c.arc(ex + er * .35, ey, er * .55, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(ex + er * .5, ey - er * .25, er * .2, 0, Math.PI * 2); c.fill(); }
+    c.restore();
+  }
+
+  const MAX = W < 600 ? 3 : 5;
+  let parts = [], splats = [], caught = 0, t = 0;
+  function spawn(inside) {
+    const edge = Math.floor(Math.random() * 4);
+    let x, y;
+    if (inside) { x = rand(40, Math.max(80, W - 40)); y = rand(40, Math.max(80, H - 40)); }
+    else if (edge === 0) { x = -30; y = rand(40, H - 40); } else if (edge === 1) { x = W + 30; y = rand(40, H - 40); }
+    else if (edge === 2) { x = rand(40, W - 40); y = -30; } else { x = rand(40, W - 40); y = H + 30; }
+    bugs.push({ x, y, a: Math.atan2(H / 2 - y, W / 2 - x) + rand(-.6, .6), turn: 0, s: rand(12, 20), v: rand(35, 70), P: PAL[Math.floor(Math.random() * PAL.length)], walk: rand(0, 40), pause: 0, seed: rand(0, 3.4) });
+  }
+  // spawn once the viewport has a real size
+  requestAnimationFrame(() => { resize(); for (let i = 0; i < MAX; i++) spawn(true); });
+
+  const status = document.getElementById('status'), hint = document.getElementById('hint');
+  function squash(b) {
+    bugs.splice(bugs.indexOf(b), 1);
+    for (let i = 0; i < 14; i++) { const an = rand(0, Math.PI * 2), v = rand(60, 220); parts.push({ x: b.x, y: b.y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, age: 0, life: rand(.35, .7), r: rand(2, 4), c: b.P.color }); }
+    splats.push({ x: b.x, y: b.y, r: b.s * 1.2, c: b.P.color, age: 0, life: 3 });
+    caught++;
+    hint.innerHTML = `Поймано жуков: <b>${caught}</b>`;
+    if (caught === 1) { status.textContent = 'в работе'; status.style.setProperty('--st', 'var(--accent)'); }
+    if (caught === 5) { status.textContent = 'исправлен'; status.style.setProperty('--st', 'var(--mint)'); }
+    setTimeout(() => spawn(false), 900);
+  }
+  addEventListener('pointerdown', e => {
+    if (e.target.closest('a, .card')) return;
+    let best = null, bd = Infinity;
+    const minR = e.pointerType === 'mouse' ? 22 : 34;
+    for (const b of bugs) { const d = Math.hypot(b.x - e.clientX, b.y - e.clientY); if (d < Math.max(minR, b.s * 1.5) && d < bd) { bd = d; best = b; } }
+    if (best) squash(best);
+  });
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+    for (let i = splats.length - 1; i >= 0; i--) { const s = splats[i]; s.age += dt; if (s.age > s.life) { splats.splice(i, 1); continue; }
+      ctx.globalAlpha = (1 - s.age / s.life) * .35; ctx.fillStyle = s.c; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    for (const b of bugs) {
+      if (!reduce) {
+        let sp = b.v;
+        if (b.pause > 0) { b.pause -= dt; sp = 0; } else if (Math.random() < dt * .3) b.pause = rand(.3, .9);
+        b.turn = Math.max(-2.4, Math.min(2.4, b.turn + (Math.random() - .5) * 10 * dt)); b.a += b.turn * dt;
+        const m = 50; if (b.x < m || b.x > W - m || b.y < m || b.y > H - m) b.a = lerpAngle(b.a, Math.atan2(H / 2 - b.y, W / 2 - b.x), dt * 3);
+        b.x += Math.cos(b.a) * sp * dt; b.y += Math.sin(b.a) * sp * dt; b.walk += sp * dt;
+      }
+      drawBug(ctx, b.x, b.y, b.a, b.s, b.P, b.walk, t, b.seed);
+    }
+    for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.age += dt; if (p.age > p.life) { parts.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .9; p.vy *= .9;
+      ctx.globalAlpha = 1 - p.age / p.life; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
