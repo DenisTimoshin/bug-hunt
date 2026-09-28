@@ -1,0 +1,1321 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Охота на баги — игра-тренажёр для начинающих тестировщиков</title>
+<meta name="description" content="Браузерная игра для начинающих тестировщиков: лови баги, пока они не уползли в прод, различай severity от Trivial до Blocker и не путай баг с фичей.">
+<meta name="author" content="d_timoshin">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0C0D1A">
+<link rel="canonical" href="https://denistimoshin.github.io/bug-hunt/">
+
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:site_name" content="d_timoshin QA">
+<meta property="og:url" content="https://denistimoshin.github.io/bug-hunt/">
+<meta property="og:title" content="Охота на баги — QA-тренажёр в браузере">
+<meta property="og:description" content="Лови жуков, пока они не уползли в прод. Учись отличать Blocker от Trivial — и баг от фичи. Бесплатно, на компьютере и телефоне.">
+<meta property="og:image" content="https://denistimoshin.github.io/bug-hunt/assets/og-image.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="617">
+<meta property="og:image:alt" content="Охота на баги: окно игры с жуками-багами разной серьёзности поверх кода">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Охота на баги — QA-тренажёр в браузере">
+<meta name="twitter:description" content="Лови жуков, пока они не уползли в прод. Учись отличать Blocker от Trivial — и баг от фичи.">
+<meta name="twitter:image" content="https://denistimoshin.github.io/bug-hunt/assets/og-image.jpg">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Охота на баги",
+  "description": "Браузерная игра-тренажёр для начинающих тестировщиков: лови баги, различай severity и не путай баг с фичей.",
+  "url": "https://denistimoshin.github.io/bug-hunt/",
+  "image": "https://denistimoshin.github.io/bug-hunt/assets/og-image.jpg",
+  "inLanguage": "ru",
+  "genre": ["Аркада", "Обучающая игра"],
+  "gamePlatform": ["Web browser", "Mobile"],
+  "applicationCategory": "Game",
+  "isAccessibleForFree": true,
+  "author": { "@type": "Person", "name": "d_timoshin" }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0C0D1A;
+    --panel: #15172A;
+    --panel-2: #1D2038;
+    --card: #14162A;
+    --edge: rgba(255,255,255,.07);
+    --edge-2: rgba(255,255,255,.12);
+    --text: #F1F2FA;
+    --muted: #9095B4;
+    --accent: #FFD23F;
+    --accent-deep: #C79A12;
+    --coral: #FF5C7A;
+    --mint: #3DDC97;
+    --lilac: #A594FF;
+    --orange: #FF9A4D;
+    --sky: #5CC8FF;
+    --display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+    --body: 'Onest', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(800px 500px at 90% -15%, rgba(165,148,255,.22) 0%, transparent 60%),
+      radial-gradient(700px 480px at -10% 115%, rgba(255,92,122,.16) 0%, transparent 60%),
+      radial-gradient(600px 400px at 50% 50%, rgba(92,200,255,.06) 0%, transparent 70%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 14px;
+    padding-inline: 16px;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+    overscroll-behavior: none;
+  }
+
+  .app {
+    height: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding-block: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  /* ---------- HUD ---------- */
+  .hud { grid-column: 1 / -1; display: flex; align-items: stretch; gap: 10px; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; }
+  .logo { flex: none; width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(145deg, #FFE27A, var(--accent) 55%, #F2B705); display: grid; place-items: center; box-shadow: 0 6px 18px rgba(255,210,63,.3), inset 0 1px 0 rgba(255,255,255,.5); transform: rotate(-6deg); }
+  .brand-name { font-family: var(--display); font-weight: 800; font-size: 19px; letter-spacing: -0.01em; line-height: 1; white-space: nowrap; }
+  .brand-sub { font-size: 12px; color: var(--muted); margin-top: 5px; white-space: nowrap; }
+
+  .chip-stat {
+    background: linear-gradient(180deg, rgba(255,255,255,.04), transparent), var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: 16px;
+    padding: 8px 14px 8px 8px;
+    display: flex; align-items: center; gap: 10px;
+    min-width: 0;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .ico { flex: none; width: 32px; height: 32px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); }
+  .ico svg { width: 17px; height: 17px; }
+  .chip-stat .k { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .chip-stat .v { display: block; font-family: var(--mono); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; white-space: nowrap; }
+  .chip-stat.combo .v { color: var(--accent); }
+  .chip-stat.quality { flex-direction: column; align-items: stretch; justify-content: center; gap: 6px; padding: 8px 14px; min-width: 190px; }
+  .qrow { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .qrow .v { font-size: 15px; }
+  .qbar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .qbar i { display: block; height: 100%; width: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--q2, #2BC985), var(--q, var(--mint))); box-shadow: 0 0 12px var(--q, var(--mint)); transition: width .3s ease; }
+
+  .icon-btn {
+    background: var(--panel); border: 1px solid var(--edge); color: var(--muted);
+    border-radius: 16px; padding: 0 14px; font: 600 12.5px var(--body); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; min-width: 48px;
+    transition: color .15s, border-color .15s, background-color .15s;
+  }
+  .icon-btn svg { width: 18px; height: 18px; flex: none; }
+  .icon-btn:hover { color: var(--text); border-color: var(--edge-2); }
+  .icon-btn:disabled { opacity: .4; cursor: default; }
+  .icon-btn:focus-visible, .btn:focus-visible, .btn-ghost:focus-visible { outline: 3px solid var(--lilac); outline-offset: 3px; }
+
+  /* ---------- Window ---------- */
+  .window {
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: 22px;
+    display: flex; flex-direction: column;
+    overflow: hidden; min-height: 0;
+    box-shadow: 0 30px 70px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .window-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid var(--edge);
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    background: rgba(0,0,0,.18);
+  }
+  .dots { display: flex; gap: 6px; }
+  .dots span { width: 11px; height: 11px; border-radius: 50%; }
+  .dots span:nth-child(1) { background: #FF5F57; } .dots span:nth-child(2) { background: #FEBC2E; } .dots span:nth-child(3) { background: #28C840; }
+  .tab { color: var(--text); background: rgba(255,255,255,.05); padding: 4px 10px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+  .status { display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px 3px 8px; border-radius: 99px; background: color-mix(in srgb, var(--status) 14%, transparent); color: var(--status); font-weight: 700; }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+
+  .arena { position: relative; flex: 1; min-height: 0; }
+  #arena { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: none; touch-action: none; }
+
+  /* ---------- Overlays ---------- */
+  .overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 18px; pointer-events: none; }
+  .overlay::before { content: ""; position: absolute; inset: 0; background: radial-gradient(closest-side, rgba(12,13,26,.55), rgba(12,13,26,.15)); pointer-events: none; }
+  .card {
+    position: relative;
+    pointer-events: auto;
+    width: 100%; max-width: 560px; max-height: 100%; overflow: auto;
+    background:
+      linear-gradient(rgba(20,22,42,.9), rgba(20,22,42,.9)) padding-box,
+      linear-gradient(140deg, rgba(255,210,63,.55), rgba(165,148,255,.35) 45%, rgba(61,220,151,.35)) border-box;
+    border: 1.5px solid transparent;
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border-radius: 26px;
+    padding: 26px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.55);
+    cursor: default;
+    display: flex; flex-direction: column; gap: 16px;
+    animation: pop .4s cubic-bezier(.2,.9,.3,1.25);
+    scrollbar-width: thin;
+  }
+  @keyframes pop { from { transform: translateY(14px) scale(.96); opacity: .3; } to { transform: none; opacity: 1; } }
+  .card-head { display: flex; align-items: center; gap: 14px; }
+  .mascot { flex: none; width: 84px; height: 72px; }
+  .eyebrow { display: inline-flex; align-self: flex-start; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); background: rgba(255,210,63,.1); padding: 5px 10px; border-radius: 99px; }
+  .card h1, .card h2 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .card h1 { font-size: clamp(26px, 4.6vw, 42px); font-weight: 800; line-height: 1.08; }
+  .card h2 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; line-height: 1.12; }
+  .squiggle { color: var(--accent); text-decoration: underline wavy var(--coral); text-decoration-thickness: 2.5px; text-underline-offset: 8px; text-decoration-skip-ink: none; }
+  .lead { margin: 0; color: #C8CBE0; font-size: 15px; line-height: 1.55; max-width: 60ch; }
+  .lead b { color: var(--text); font-weight: 600; }
+
+  .legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .legend li { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; background: color-mix(in srgb, var(--c) 7%, var(--panel-2)); border: 1px solid color-mix(in srgb, var(--c) 22%, transparent); border-radius: 16px; padding: 8px 8px 10px; }
+  .legend canvas { width: 48px; height: 48px; }
+  .legend .n { font-weight: 700; font-size: 13px; color: var(--c); }
+  .legend .d { font-size: 11px; color: var(--muted); line-height: 1.3; }
+  .legend .p { font-family: var(--mono); font-weight: 700; font-size: 11.5px; color: var(--text); background: rgba(255,255,255,.07); border-radius: 6px; padding: 1px 6px; margin-top: 4px; }
+
+  .rules { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .rules li { font-size: 12.5px; color: #C8CBE0; background: rgba(255,255,255,.05); border-radius: 99px; padding: 6px 12px; }
+  .rules b { color: var(--text); }
+
+  .actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .btn {
+    background: linear-gradient(180deg, #FFE27A, var(--accent)); color: #1B1606;
+    font-family: var(--display); font-weight: 700; font-size: 15px;
+    border: 0; border-radius: 16px; padding: 16px 26px; cursor: pointer;
+    box-shadow: 0 6px 0 var(--accent-deep), 0 14px 30px rgba(255,210,63,.28);
+    transition: transform .12s, box-shadow .12s;
+    touch-action: manipulation;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--accent-deep), 0 18px 34px rgba(255,210,63,.32); }
+  .btn:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--accent-deep), 0 6px 14px rgba(255,210,63,.2); }
+  .btn-ghost { background: transparent; border: 1px solid var(--edge-2); color: var(--text); font: 600 14px var(--body); border-radius: 14px; padding: 13px 18px; cursor: pointer; touch-action: manipulation; }
+  .hint { font-size: 12.5px; color: var(--muted); }
+  .hint b { color: var(--accent); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .stats div { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 14px; padding: 10px 12px; }
+  .stats .k { font-size: 10.5px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+  .stats .v { font-family: var(--mono); font-size: 20px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .tip { border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; background: rgba(165,148,255,.09); border: 1px solid rgba(165,148,255,.22); }
+  .tip .tag { font-family: var(--mono); font-size: 10.5px; font-weight: 700; color: #17132E; background: var(--lilac); border-radius: 7px; padding: 3px 7px; flex: none; margin-top: 2px; }
+  .tip p { margin: 0; line-height: 1.5; color: #DADCEC; }
+
+  /* course promo */
+  .promo {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 16px 18px; border-radius: 18px;
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(255,210,63,.18), transparent 55%),
+      linear-gradient(135deg, rgba(61,220,151,.14), rgba(92,200,255,.10));
+    border: 1px solid rgba(61,220,151,.3);
+  }
+  .promo-text { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .promo-kicker { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--mint); }
+  .promo-title { font-family: var(--display); font-weight: 700; font-size: 16px; line-height: 1.25; text-wrap: balance; }
+  .promo-sub { font-size: 13px; color: #C8CBE0; line-height: 1.45; }
+  .promo-btn {
+    flex: none; display: inline-flex; align-items: center; gap: 8px;
+    background: var(--mint); color: #062015; text-decoration: none;
+    font-family: var(--display); font-weight: 700; font-size: 13.5px;
+    padding: 13px 18px; border-radius: 14px;
+    box-shadow: 0 5px 0 #1E9E68, 0 12px 26px rgba(61,220,151,.25);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .promo-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #1E9E68, 0 16px 30px rgba(61,220,151,.3); }
+  .promo-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1E9E68; }
+  .promo-btn:focus-visible { outline: 3px solid var(--lilac); outline-offset: 3px; }
+  .promo-btn svg { width: 16px; height: 16px; }
+
+  /* mobile event toast */
+  .ticker { position: absolute; left: 50%; bottom: 12px; transform: translate(-50%, 8px); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; display: none; max-width: calc(100% - 24px); }
+  .ticker.show { opacity: 1; transform: translate(-50%, 0); }
+  .ticker .ev { background: rgba(20,22,42,.92); border: 1px solid var(--edge-2); box-shadow: 0 8px 24px rgba(0,0,0,.4); animation: none; }
+
+  /* ---------- Tracker ---------- */
+  .log .window-bar { justify-content: space-between; }
+  .log-title { font-family: var(--display); font-weight: 700; font-size: 13px; color: var(--text); }
+  .log-counts { display: flex; gap: 10px; }
+  .log-counts b { color: var(--text); }
+  .log ul { list-style: none; margin: 0; padding: 10px; overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .ev { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: var(--panel-2); border: 1px solid transparent; font-size: 12.5px; animation: slide .25s ease-out; }
+  @keyframes slide { from { transform: translateX(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .ev .id { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .ev .chip { font-family: var(--mono); font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 7px; color: #121320; background: var(--c); }
+  .ev .msg { color: #C8CBE0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev.bad { border-color: rgba(255,92,122,.35); background: rgba(255,92,122,.1); }
+  .ev.bad .msg { color: #FF9CAF; }
+  .ev.feat .msg { color: var(--lilac); }
+  .empty { color: var(--muted); font-size: 13px; line-height: 1.55; padding: 14px 8px; }
+  .empty code { font-family: var(--mono); color: var(--accent); font-size: 12px; }
+
+  /* ---------- Tablet ---------- */
+  @media (max-width: 1100px) {
+    .brand-sub { display: none; }
+    .chip-stat { padding-right: 10px; }
+    .chip-stat.quality { min-width: 150px; }
+    .icon-btn .lbl { display: none; }
+  }
+
+  /* ---------- Phone ---------- */
+  @media (max-width: 820px) {
+    body { padding-inline: 10px; }
+    .app { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-block: 8px; }
+    .log { display: none; }
+    .hud { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .brand { grid-column: 1 / 3; order: 0; gap: 9px; margin: 0; }
+    .logo { width: 34px; height: 34px; border-radius: 11px; }
+    .logo svg { width: 20px; height: 20px; }
+    .brand-name { font-size: 15px; }
+    #pauseBtn { order: 1; } #muteBtn { order: 2; }
+    .icon-btn { min-height: 40px; border-radius: 12px; padding: 0; }
+    .hud .icon-btn:first-of-type { grid-column: 3; }
+    .chip-stat { order: 3; padding: 6px 8px; border-radius: 12px; flex-direction: column; align-items: flex-start; gap: 0; }
+    .chip-stat .ico { display: none; }
+    .chip-stat .k { font-size: 9px; letter-spacing: .08em; }
+    .chip-stat .v { font-size: 16px; }
+    .chip-stat.quality { order: 4; grid-column: 1 / -1; min-width: 0; flex-direction: row; align-items: center; gap: 10px; padding: 7px 10px; }
+    .chip-stat.quality .qrow { flex: none; gap: 8px; }
+    .chip-stat.quality .qbar { flex: 1; }
+    .window { border-radius: 18px; }
+    .window-bar { display: none; }
+    .ticker { display: block; }
+    .overlay { padding: 10px; }
+    .card { padding: 18px; gap: 13px; border-radius: 22px; }
+    .mascot { width: 64px; height: 56px; }
+    .card h1 { font-size: clamp(22px, 6.6vw, 30px); }
+    .lead { font-size: 13.5px; line-height: 1.5; }
+    .legend { gap: 6px; }
+    .legend li { padding: 6px 4px 8px; border-radius: 13px; }
+    .legend canvas { width: 40px; height: 40px; }
+    .legend .d { display: none; }
+    .legend .n { font-size: 12px; }
+    .rules li { font-size: 12px; padding: 5px 10px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stats .v { font-size: 18px; }
+    .btn { flex: 1; padding: 15px 20px; }
+    .actions { gap: 10px; }
+    .actions .hint { flex-basis: 100%; text-align: center; }
+    .tip p { font-size: 13px; }
+    .promo { padding: 14px; gap: 12px; }
+    .promo-title { font-size: 14.5px; }
+    .promo-btn { flex: 1; justify-content: center; }
+    .over-lead { display: none; }
+  }
+  @media (max-width: 820px) and (max-height: 640px) {
+    .card .lead.menu-lead { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .ev { animation: none; }
+    .btn, .qbar i, .ticker { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="hud">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <g stroke="#1B1606" stroke-width="1.8" stroke-linecap="round" fill="none">
+            <path d="M7 9.5L4 7.5M6.5 13.5H3M7 17.5l-3 2M17 9.5l3-2M17.5 13.5H21M17 17.5l3 2M10 5.5L8.5 3M14 5.5L15.5 3"/>
+          </g>
+          <ellipse cx="12" cy="14" rx="5.5" ry="6.5" fill="#1B1606"/>
+          <circle cx="12" cy="7.2" r="3" fill="#1B1606"/>
+          <circle cx="10.8" cy="6.8" r="1" fill="#FFD23F"/><circle cx="13.2" cy="6.8" r="1" fill="#FFD23F"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">Охота на баги</div>
+        <div class="brand-sub">QA-тренажёр для джунов</div>
+      </div>
+    </div>
+
+    <div class="chip-stat" style="--c: var(--accent)">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.3l-5.8 3.1 1.1-6.5L2.6 9.3l6.5-.9z"/></svg></span>
+      <span><span class="k">Очки</span><span class="v" id="hScore">0</span></span>
+    </div>
+    <div class="chip-stat combo" style="--c: var(--orange)">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L4 14h7l-1.5 8L20 10h-7z"/></svg></span>
+      <span><span class="k">Комбо</span><span class="v" id="hCombo">×1</span></span>
+    </div>
+    <div class="chip-stat" style="--c: var(--sky)">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></span>
+      <span><span class="k">Время</span><span class="v" id="hTime">0:40</span></span>
+    </div>
+    <div class="chip-stat" style="--c: var(--lilac)">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 2h2v20H5zM8 3h11l-2.5 4.5L19 12H8z"/></svg></span>
+      <span><span class="k">Спринт</span><span class="v" id="hSprint">1</span></span>
+    </div>
+    <div class="chip-stat quality">
+      <div class="qrow"><span class="k">Качество релиза</span><span class="v" id="hQuality">100%</span></div>
+      <div class="qbar"><i id="hQbar"></i></div>
+    </div>
+
+    <button class="icon-btn" id="pauseBtn" type="button" aria-label="Пауза" disabled>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg><span class="lbl">Пауза</span>
+    </button>
+    <button class="icon-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="Звук">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path id="muteWaves" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><span class="lbl" id="muteLbl">Звук</span>
+    </button>
+  </header>
+
+  <main class="window">
+    <div class="window-bar">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span class="tab">checkout.service.ts</span>
+      <div class="bar-right">
+        <span id="buildLbl">build 0.1.0</span>
+        <span class="status" id="statusLbl" style="--status: var(--muted)">ожидание</span>
+      </div>
+    </div>
+    <div class="arena" id="arenaWrap">
+      <canvas id="arena" aria-label="Игровое поле: кликай или тапай по жукам"></canvas>
+      <div class="ticker" id="ticker" aria-hidden="true"></div>
+
+      <div class="overlay" id="ovMenu">
+        <div class="card">
+          <div class="card-head">
+            <canvas class="mascot" id="mascot" width="168" height="144" aria-hidden="true"></canvas>
+            <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+              <span class="eyebrow">Смена QA · Junior</span>
+              <h1>Лови <span class="squiggle">баги</span>, пока они не уползли в прод</h1>
+            </div>
+          </div>
+          <p class="lead menu-lead">Жми по жукам, чтобы закрыть тикет. Сбежавший за край баг <b>снижает качество релиза</b>. Чем серьёзнее баг, тем больше очков — и тем он опаснее.</p>
+          <ul class="legend" id="legend"></ul>
+          <ul class="rules">
+            <li><b>40 с</b> на спринт</li>
+            <li>промах сбрасывает <b>комбо</b></li>
+            <li>красное кольцо — баг <b>сейчас сбежит</b></li>
+          </ul>
+          <div class="actions">
+            <button class="btn" id="startBtn" type="button">Начать спринт</button>
+            <span class="hint" id="bestLbl">Рекорд: пока нет</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovPause" hidden>
+        <div class="card" style="max-width:420px">
+          <span class="eyebrow">Код-фриз</span>
+          <h2>Пауза</h2>
+          <p class="lead">Баги замерли и ждут. Возвращайся, когда будешь готов.</p>
+          <div class="actions">
+            <button class="btn" id="resumeBtn" type="button">Продолжить</button>
+            <button class="btn-ghost" id="quitBtn" type="button">В меню</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovRetro" hidden>
+        <div class="card">
+          <span class="eyebrow" id="retroEyebrow">Ретроспектива</span>
+          <h2 id="retroTitle">Спринт 1 закрыт</h2>
+          <div class="stats" id="retroStats"></div>
+          <p class="lead" id="retroBonus"></p>
+          <div class="tip"><span class="tag">СОВЕТ QA</span><p id="retroTip"></p></div>
+          <div class="actions">
+            <button class="btn" id="nextBtn" type="button">Следующий спринт</button>
+            <span class="hint">+15% к качеству после хотфиксов</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="ovOver" hidden>
+        <div class="card">
+          <span class="eyebrow" style="color: var(--coral); background: rgba(255,92,122,.12)">Инцидент в продакшене</span>
+          <h2>Релиз сорван</h2>
+          <p class="lead over-lead">Качество упало до нуля — слишком много багов добралось до пользователей. Бывает. Главное — разобрать, что пошло не так.</p>
+          <div class="stats" id="overStats"></div>
+          <div class="tip"><span class="tag">СОВЕТ QA</span><p id="overTip"></p></div>
+          <div class="promo">
+            <div class="promo-text">
+              <span class="promo-kicker">Следующий уровень</span>
+              <span class="promo-title">Хочешь развиваться в профессии QA?</span>
+              <span class="promo-sub">Ловить жуков мышкой ты уже умеешь. Пора научиться находить баги в настоящих продуктах — добро пожаловать на курс по тестированию.</span>
+            </div>
+            <a class="promo-btn" href="https://stepik.org/a/254843" target="_blank" rel="noopener">Перейти к курсу
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+          </div>
+          <div class="actions">
+            <button class="btn" id="againBtn" type="button">Новая смена</button>
+            <span class="hint" id="overBest"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="window log" aria-label="Баг-трекер">
+    <div class="window-bar">
+      <span class="log-title">Баг-трекер</span>
+      <span class="log-counts"><span>закрыто <b id="cKilled">0</b></span><span>в проде <b id="cEscaped">0</b></span></span>
+    </div>
+    <ul id="log">
+      <li class="empty" id="logEmpty">Тикетов пока нет. Каждый пойманный жук попадёт сюда с ID и серьёзностью — как в настоящем трекере.<br><br>Кстати, в коде на фоне спрятано несколько <code>настоящих</code> багов. Найдёшь?</li>
+    </ul>
+  </aside>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerpAngle = (a, b, t) => { const d = Math.atan2(Math.sin(b - a), Math.cos(b - a)); return a + d * Math.min(1, t); };
+  const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function shade(hex, amt) {
+    const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    const t = amt > 0 ? 255 : 0, k = Math.abs(amt);
+    const m = v => Math.round(v + (t - v) * k);
+    return `rgb(${m(r)},${m(g)},${m(b)})`;
+  }
+
+  const SPRINT_LEN = 40;
+  const SEV = [
+    { name: 'Trivial',  color: '#A9B8D6', size: 12, speed: 42,  hp: 1, pts: 10,  dmg: 3,  life: [6, 8],   desc: 'Опечатка, съехавший пиксель' },
+    { name: 'Minor',    color: '#3DDC97', size: 14, speed: 62,  hp: 1, pts: 20,  dmg: 5,  life: [5, 7],   desc: 'Мелкий сбой, есть обход' },
+    { name: 'Major',    color: '#FFD23F', size: 15, speed: 100, hp: 1, pts: 40,  dmg: 8,  life: [4, 6],   desc: 'Ломает важную функцию' },
+    { name: 'Critical', color: '#FF9A4D', size: 18, speed: 78,  hp: 2, pts: 80,  dmg: 12, life: [4.5, 6], desc: 'Падение, потеря данных' },
+    { name: 'Blocker',  color: '#FF5C7A', size: 25, speed: 52,  hp: 3, pts: 150, dmg: 20, life: [5, 7],   desc: 'Тестировать дальше нельзя' },
+  ];
+  SEV.forEach(s => { s.light = shade(s.color, 0.55); s.dark = shade(s.color, -0.55); s.mid = shade(s.color, -0.2); });
+  const FEAT_COLOR = '#A594FF';
+
+  const TIPS = [
+    'Severity — насколько баг вредит системе, Priority — как срочно его чинить. Опечатка в логотипе на главной: низкая серьёзность, но высокий приоритет.',
+    'Хороший баг-репорт = заголовок, шаги воспроизведения, ожидаемый результат, фактический результат и окружение. Без шагов баг «не воспроизводится».',
+    'Blocker останавливает дальнейшее тестирование. О нём сообщают сразу, не дожидаясь конца дня.',
+    'Не всё странное — баг. Прежде чем заводить тикет, сверься с требованиями: возможно, это фича.',
+    'Чем раньше найден дефект, тем дешевле его исправить. Баг в требованиях стоит копейки, баг в проде — репутацию.',
+    'Регрессионное тестирование проверяет, что новые изменения не сломали то, что работало раньше.',
+    'Граничные значения: если поле принимает 1–99, проверь 0, 1, 99 и 100. Большинство багов живёт на границах.',
+    'Тестируй и позитивные, и негативные сценарии: что будет, если ввести пустую строку, эмодзи или 10 000 символов?',
+    'Исчерпывающее тестирование невозможно. Выбирай, что проверять, исходя из рисков.',
+    'Скопление дефектов: большая часть багов обычно сидит в небольшом числе модулей. Нашёл один — ищи рядом.',
+    'Парадокс пестицида: одни и те же тесты со временем перестают находить новые баги. Обновляй сценарии.',
+    'Посмотри на код на фоне: `i <= items.length` — классическая ошибка на единицу (off-by-one).',
+  ];
+
+  const CODE = [
+    "import { cart, pay } from './checkout';",
+    "",
+    "// FIXME: иногда total уходит в минус",
+    "export function calcTotal(items, promo) {",
+    "  let total = 0;",
+    "  for (let i = 0; i <= items.length; i++) {",
+    "    total += items[i].price * items[i].qty;",
+    "  }",
+    "  if (promo === 'SALE50') total = total / 2;",
+    "  return Math.round(total * 100) / 100;",
+    "}",
+    "",
+    "export async function submitOrder(user) {",
+    "  const res = await pay(user.card, calcTotal(cart));",
+    "  if (res.status == 200) return true;",
+    "  // TODO: обработать таймаут",
+    "  return false;",
+    "}",
+    "",
+    "function validateEmail(value) {",
+    "  return value.includes('@');",
+    "}",
+    "",
+    "const MAX_QTY = 99;",
+    "function setQty(item, qty) {",
+    "  if (qty > MAX_QTY) qty = 100;",
+    "  item.qty = qty;",
+    "}",
+    "",
+  ];
+  const KW = new Set(['import','from','export','function','let','const','for','if','return','async','await','true','false','throw','new']);
+
+  // ---------- DOM ----------
+  const wrap = $('#arenaWrap'), cvs = $('#arena'), ctx = cvs.getContext('2d');
+  const hud = { score: $('#hScore'), combo: $('#hCombo'), sprint: $('#hSprint'), time: $('#hTime'), q: $('#hQuality'), qbar: $('#hQbar') };
+  const logEl = $('#log');
+  const mascot = $('#mascot'), mctx = mascot.getContext('2d');
+
+  let W = 0, H = 0, DPR = 1, compact = false, areaK = 1;
+  let codeCvs = null;
+
+  // ---------- State ----------
+  const G = {
+    state: 'menu', t: 0, score: 0, sprint: 1, time: SPRINT_LEN, quality: 100, combo: 0, lastMult: 1,
+    spawnT: 0.3, shake: 0, danger: 0, best: 0, muted: false,
+    stats: null, total: null,
+  };
+  let bugs = [], feats = [], parts = [], floats = [], splats = [], ripples = [];
+  let nextId = 1040 + Math.floor(Math.random() * 60);
+  const mouse = { x: -100, y: -100, in: false, mouseLike: true, pulse: 0 };
+
+  const newStats = () => ({ killed: 0, escaped: 0, clicks: 0, hits: 0, react: [], feats: 0 });
+
+  try { G.best = parseInt(localStorage.getItem('bughunt.best') || '0', 10) || 0; } catch (e) {}
+  const saveBest = () => { try { localStorage.setItem('bughunt.best', String(G.best)); } catch (e) {} };
+  const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
+
+  // ---------- Audio ----------
+  let AC = null;
+  function audio() {
+    if (G.muted) return null;
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (AC.state === 'suspended') AC.resume().catch(() => {});
+    return AC;
+  }
+  function tone(f, dur, type = 'sine', vol = 0.12, to = null, delay = 0) {
+    const a = audio(); if (!a) return;
+    const t0 = a.currentTime + delay;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t0);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function noise(dur, vol, freq) {
+    const a = audio(); if (!a) return;
+    const len = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    s.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.9; g.gain.value = vol;
+    s.connect(f).connect(g).connect(a.destination); s.start();
+  }
+  const sfx = {
+    squash(big) { noise(big ? 0.16 : 0.08, big ? 0.5 : 0.3, big ? 900 : 1800); tone(big ? 160 : 240, 0.14, 'triangle', 0.14, 60); },
+    hit() { tone(520, 0.06, 'square', 0.05, 380); noise(0.04, 0.15, 3000); },
+    miss() { tone(170, 0.05, 'sine', 0.05, 120); },
+    feat() { tone(700, 0.12, 'sine', 0.1, 520); tone(420, 0.22, 'sine', 0.1, 260, 0.1); },
+    escape() { tone(120, 0.3, 'sawtooth', 0.05, 70); },
+    combo(n) { tone(660 + n * 90, 0.09, 'triangle', 0.08); tone(880 + n * 90, 0.12, 'triangle', 0.07, null, 0.07); },
+    sprint() { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.18, 'triangle', 0.08, null, i * 0.08)); },
+    over() { [392, 330, 262, 196].forEach((f, i) => tone(f, 0.28, 'sawtooth', 0.045, null, i * 0.14)); },
+  };
+
+  // ---------- Layout ----------
+  function resize() {
+    const r = wrap.getBoundingClientRect();
+    W = Math.max(1, r.width); H = Math.max(1, r.height);
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    compact = W < 560;
+    areaK = clamp((W * H) / (900 * 600), 0.5, 1);
+    cvs.width = Math.round(W * DPR); cvs.height = Math.round(H * DPR);
+    buildCode();
+    bugs.forEach(b => { if (!b.escaping) { b.x = clamp(b.x, 20, W - 20); b.y = clamp(b.y, 20, H - 20); } });
+  }
+
+  function buildCode() {
+    codeCvs = document.createElement('canvas');
+    codeCvs.width = Math.round(W * DPR); codeCvs.height = Math.round(H * DPR);
+    const c = codeCvs.getContext('2d');
+    c.scale(DPR, DPR);
+    const bg = c.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#171A31'); bg.addColorStop(1, '#101224');
+    c.fillStyle = bg; c.fillRect(0, 0, W, H);
+    // soft colour glows
+    for (const [gx, gy, col] of [[0.15, 0.2, 'rgba(165,148,255,.10)'], [0.85, 0.75, 'rgba(255,92,122,.08)'], [0.7, 0.15, 'rgba(92,200,255,.07)']]) {
+      const g = c.createRadialGradient(W * gx, H * gy, 0, W * gx, H * gy, Math.max(W, H) * 0.45);
+      g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+    }
+    const gut = compact ? 30 : 44;
+    c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(0, 0, gut, H);
+    const lh = compact ? 20 : 22, fs = compact ? 10.5 : 13;
+    c.font = `${fs}px "JetBrains Mono", ui-monospace, Menlo, monospace`;
+    c.textBaseline = 'middle';
+    const rows = Math.ceil(H / lh) + 1;
+    const re = /('[^']*'|\/\/.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_$][\w$]*|\s+|.)/g;
+    for (let r = 0; r < rows; r++) {
+      const y = 14 + r * lh;
+      c.globalAlpha = 0.5; c.fillStyle = '#4A4E72'; c.textAlign = 'right';
+      c.fillText(String(r + 1), gut - 9, y);
+      c.textAlign = 'left';
+      const line = CODE[r % CODE.length];
+      let x = gut + 12;
+      for (const tok of line.match(re) || []) {
+        let col = '#8288AA';
+        if (tok.startsWith('//')) col = '#5C6188';
+        else if (tok[0] === "'") col = '#3DDC97';
+        else if (/^\d/.test(tok)) col = '#FFD23F';
+        else if (KW.has(tok)) col = '#A594FF';
+        else if (/^[{}()[\];]$/.test(tok)) col = '#6A6F95';
+        c.globalAlpha = tok.startsWith('//') ? 0.5 : 0.28;
+        c.fillStyle = col; c.fillText(tok, x, y);
+        x += c.measureText(tok).width;
+      }
+    }
+    c.globalAlpha = 1;
+    const v = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.8);
+    v.addColorStop(0, 'rgba(12,13,26,0)'); v.addColorStop(1, 'rgba(8,9,18,.55)');
+    c.fillStyle = v; c.fillRect(0, 0, W, H);
+  }
+
+  // ---------- Drawing primitives ----------
+  function drawBug(c, x, y, a, s, S, walk, flash, alpha = 1, t = 0, seed = 0) {
+    c.save();
+    c.globalAlpha = alpha;
+    c.translate(x, y);
+    c.fillStyle = 'rgba(0,0,0,.32)';
+    c.beginPath(); c.ellipse(2, 5, s * 1.05, s * 0.8, a, 0, Math.PI * 2); c.fill();
+    c.rotate(a);
+    // legs (tripod gait)
+    c.strokeStyle = S.dark; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.lineWidth = Math.max(1.6, s * 0.13);
+    const ph = walk / Math.max(8, s) * 4.2;
+    for (let i = 0; i < 3; i++) {
+      const lx = (i - 1) * s * 0.45;
+      for (const side of [-1, 1]) {
+        const phase = (i % 2 === 0 ? 0 : Math.PI) + (side < 0 ? 0 : Math.PI);
+        const sw = Math.sin(ph + phase) * s * 0.28;
+        c.beginPath();
+        c.moveTo(lx, side * s * 0.3);
+        c.lineTo(lx + sw * 0.5 + (i - 1) * s * 0.15, side * s * 0.82);
+        c.lineTo(lx + sw + (i - 1) * s * 0.35, side * s * 1.1);
+        c.stroke();
+      }
+    }
+    // antennae with bobbles
+    c.lineWidth = Math.max(1.2, s * 0.08);
+    const aw = Math.sin(ph * 0.6 + t * 3) * s * 0.12;
+    const tips = [[s * 1.42 + aw, -s * 0.6], [s * 1.42 - aw, s * 0.6]];
+    c.beginPath(); c.moveTo(s * 0.8, -s * 0.14); c.quadraticCurveTo(s * 1.2, -s * 0.2, tips[0][0], tips[0][1]); c.stroke();
+    c.beginPath(); c.moveTo(s * 0.8, s * 0.14); c.quadraticCurveTo(s * 1.2, s * 0.2, tips[1][0], tips[1][1]); c.stroke();
+    c.fillStyle = S.color;
+    for (const [tx, ty] of tips) { c.beginPath(); c.arc(tx, ty, Math.max(1.6, s * 0.12), 0, Math.PI * 2); c.fill(); }
+    // body with soft gradient
+    const g = c.createRadialGradient(-s * 0.35, -s * 0.3, s * 0.05, -s * 0.12, 0, s * 0.95);
+    g.addColorStop(0, S.light); g.addColorStop(0.5, S.color); g.addColorStop(1, S.mid);
+    c.fillStyle = g;
+    c.beginPath(); c.ellipse(-s * 0.12, 0, s * 0.8, s * 0.62, 0, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(10,10,25,.35)'; c.lineWidth = Math.max(1, s * 0.06);
+    c.beginPath(); c.moveTo(s * 0.42, 0); c.lineTo(-s * 0.9, 0); c.stroke();
+    c.fillStyle = 'rgba(10,10,25,.22)';
+    for (const [sx, sy, sr] of [[-0.35, 0.3, 0.14], [0.08, 0.3, 0.1]]) {
+      c.beginPath(); c.arc(sx * s, sy * s, sr * s, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(sx * s, -sy * s, sr * s, 0, Math.PI * 2); c.fill();
+    }
+    // gloss
+    c.fillStyle = 'rgba(255,255,255,.38)';
+    c.beginPath(); c.ellipse(-s * 0.2, -s * 0.3, s * 0.3, s * 0.1, -0.2, 0, Math.PI * 2); c.fill();
+    // head
+    c.fillStyle = S.dark;
+    c.beginPath(); c.ellipse(s * 0.64, 0, s * 0.34, s * 0.4, 0, 0, Math.PI * 2); c.fill();
+    // big friendly eyes
+    const er = s * 0.17, blink = ((t + seed) % 3.4) < 0.12;
+    for (const side of [-1, 1]) {
+      const ex = s * 0.74, ey = side * s * 0.19;
+      c.fillStyle = '#fff';
+      if (blink) { c.fillRect(ex - er, ey - s * 0.02, er * 2, Math.max(1, s * 0.05)); continue; }
+      c.beginPath(); c.arc(ex, ey, er, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#12131F';
+      c.beginPath(); c.arc(ex + er * 0.35, ey, er * 0.55, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#fff';
+      c.beginPath(); c.arc(ex + er * 0.5, ey - er * 0.25, er * 0.2, 0, Math.PI * 2); c.fill();
+    }
+    if (flash > 0) {
+      c.globalAlpha = alpha * flash;
+      c.fillStyle = '#fff';
+      c.beginPath(); c.ellipse(-s * 0.05, 0, s * 0.95, s * 0.65, 0, 0, Math.PI * 2); c.fill();
+    }
+    c.restore();
+  }
+
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+  function sparkle(c, x, y, r, rot) {
+    c.save(); c.translate(x, y); c.rotate(rot);
+    c.beginPath();
+    for (let i = 0; i < 8; i++) { const rr = i % 2 ? r * 0.35 : r, an = i * Math.PI / 4; c.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); }
+    c.closePath(); c.fill(); c.restore();
+  }
+
+  function drawFeat(c, f, t) {
+    const alpha = Math.min(1, f.age * 3, (f.life - f.age) * 2);
+    c.save();
+    c.globalAlpha = Math.max(0, alpha);
+    c.translate(f.x, f.y + Math.sin(t * 3 + f.seed) * 3);
+    const w = 62, h = 28;
+    c.shadowColor = 'rgba(165,148,255,.6)'; c.shadowBlur = 20;
+    const g = c.createLinearGradient(0, -h / 2, 0, h / 2);
+    g.addColorStop(0, '#C3B8FF'); g.addColorStop(1, FEAT_COLOR);
+    c.fillStyle = g; roundRect(c, -w / 2, -h / 2, w, h, 14); c.fill();
+    c.shadowBlur = 0;
+    c.fillStyle = '#17132E';
+    c.font = '700 12px "Unbounded", system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('фича', 5, 1);
+    sparkle(c, -w / 2 + 12, 0, 6, t * 2 + f.seed);
+    c.fillStyle = '#fff';
+    sparkle(c, w / 2 - 2, -h / 2 - 2, 4 + Math.sin(t * 5 + f.seed) * 1.5, 0);
+    c.restore();
+  }
+
+  // ---------- Spawning ----------
+  const speedMul = () => 1 + (G.sprint - 1) * 0.12;
+  function pickSev(s) {
+    const w = [4, 3.5, 1 + 0.5 * s, 0.3 + 0.45 * s, s >= 2 ? 0.1 + 0.18 * s : 0];
+    let r = Math.random() * w.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < w.length; i++) { r -= w[i]; if (r <= 0) return i; }
+    return 0;
+  }
+  function spawnBug(i, demo) {
+    const S = SEV[i], edge = Math.floor(Math.random() * 4);
+    let x, y, a;
+    if (edge === 0) { x = -30; y = rand(40, H - 40); a = 0; }
+    else if (edge === 1) { x = W + 30; y = rand(40, H - 40); a = Math.PI; }
+    else if (edge === 2) { x = rand(60, W - 40); y = -30; a = Math.PI / 2; }
+    else { x = rand(60, W - 40); y = H + 30; a = -Math.PI / 2; }
+    a += rand(-0.6, 0.6);
+    const sizeK = compact ? 1.2 : 1, speedK = compact ? 0.72 : 1;
+    bugs.push({
+      id: nextId++, sev: i, x, y, a, turn: 0, size: S.size * sizeK,
+      v: S.speed * (demo ? 0.8 : speedMul()) * speedK,
+      hp: S.hp, age: 0, life: rand(S.life[0], S.life[1]) * (demo ? 1.4 : Math.max(0.6, 1 - (G.sprint - 1) * 0.06)) * (compact ? 1.12 : 1),
+      escaping: false, inside: false, flash: 0, pause: 0, walk: rand(0, 50), boost: 0, noDamage: !!demo, seed: rand(0, 3.4),
+    });
+  }
+  function spawnFeat() {
+    feats.push({ id: nextId++, x: rand(60, W - 60), y: rand(60, H - 60), a: rand(0, Math.PI * 2), age: 0, life: rand(4.5, 6.5), seed: rand(0, 6) });
+  }
+
+  // ---------- Game flow ----------
+  function fleeAll() { bugs.forEach(b => { b.escaping = true; b.noDamage = true; b.escA = edgeAngle(b); b.pause = 0; }); feats = []; }
+  function edgeAngle(b) {
+    const d = [b.x, W - b.x, b.y, H - b.y], m = d.indexOf(Math.min(...d));
+    return [Math.PI, 0, -Math.PI / 2, Math.PI / 2][m];
+  }
+  function show(id) {
+    ['#ovMenu', '#ovPause', '#ovRetro', '#ovOver'].forEach(s => { $(s).hidden = s !== id; });
+    const b = id && $(id).querySelector('.btn');
+    if (b && mouse.mouseLike) setTimeout(() => b.focus({ preventScroll: true }), 50);
+  }
+  function setStatus(text, color) { const s = $('#statusLbl'); s.textContent = text; s.style.setProperty('--status', color); }
+  const pauseBtn = $('#pauseBtn');
+
+  function newGame() {
+    G.score = 0; G.sprint = 1; G.quality = 100; G.combo = 0;
+    G.total = newStats();
+    logEl.querySelectorAll('.ev').forEach(n => n.remove());
+    $('#logEmpty').hidden = false;
+    $('#cKilled').textContent = '0'; $('#cEscaped').textContent = '0';
+    startSprint();
+  }
+  function startSprint() {
+    G.state = 'play'; G.time = SPRINT_LEN; G.stats = newStats(); G.spawnT = 0.4; G.lastMult = 1;
+    fleeAll(); show(null);
+    $('#buildLbl').textContent = `build 0.${G.sprint}.0`;
+    setStatus('тестирование', 'var(--mint)');
+    pauseBtn.disabled = false;
+    audio();
+  }
+  function pause() {
+    if (G.state !== 'play') return;
+    G.state = 'pause'; show('#ovPause'); setStatus('пауза', 'var(--sky)');
+  }
+  function resume() {
+    if (G.state !== 'pause') return;
+    G.state = 'play'; show(null); setStatus('тестирование', 'var(--mint)');
+  }
+  function toMenu() {
+    G.state = 'menu'; fleeAll(); show('#ovMenu'); setStatus('ожидание', 'var(--muted)');
+    pauseBtn.disabled = true; G.time = SPRINT_LEN;
+  }
+  function endSprint() {
+    G.state = 'retro';
+    fleeAll();
+    pauseBtn.disabled = true;
+    const bonus = Math.round(G.quality) * 3;
+    G.score += bonus;
+    const s = G.stats;
+    $('#retroEyebrow').textContent = `Ретро · build 0.${G.sprint}.0`;
+    $('#retroTitle').textContent = `Спринт ${G.sprint} закрыт`;
+    fillStats('#retroStats', [
+      ['Закрыто', s.killed], ['В проде', s.escaped],
+      ['Точность', acc(s)], ['Реакция', avgReact(s)],
+    ]);
+    $('#retroBonus').innerHTML = `Бонус за качество: <b>+${bonus}</b> очков (${Math.round(G.quality)}% × 3).` + (s.feats ? ` Ложных тикетов на фичи: <b>${s.feats}</b>.` : '');
+    $('#retroTip').textContent = TIPS[(G.sprint - 1) % TIPS.length];
+    $('#nextBtn').textContent = `Спринт ${G.sprint + 1}`;
+    setStatus('ретро', 'var(--accent)');
+    sfx.sprint();
+    show('#ovRetro');
+  }
+  function gameOver() {
+    G.state = 'over';
+    fleeAll();
+    pauseBtn.disabled = true;
+    const T = G.total;
+    const record = G.score > G.best;
+    if (record) { G.best = G.score; saveBest(); }
+    fillStats('#overStats', [['Очки', G.score], ['Спринт', G.sprint], ['Закрыто', T.killed], ['Точность', acc(T)]]);
+    $('#overTip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+    $('#overBest').innerHTML = record ? '<b>Новый рекорд!</b>' : `Рекорд: ${G.best}`;
+    updateBestLbl();
+    setStatus('инцидент', 'var(--coral)');
+    sfx.over(); buzz([60, 60, 120]);
+    if (!reduceMotion) G.shake = 14;
+    show('#ovOver');
+  }
+  function fillStats(sel, rows) {
+    const el = $(sel); el.textContent = '';
+    for (const [k, v] of rows) {
+      const d = document.createElement('div');
+      const kk = document.createElement('div'); kk.className = 'k'; kk.textContent = k;
+      const vv = document.createElement('div'); vv.className = 'v'; vv.textContent = v;
+      d.append(kk, vv); el.append(d);
+    }
+  }
+  const acc = s => s.clicks ? Math.round(s.hits / s.clicks * 100) + '%' : '—';
+  const avgReact = s => s.react.length ? (s.react.reduce((a, b) => a + b, 0) / s.react.length).toFixed(1) + ' с' : '—';
+  const mult = () => Math.min(5, 1 + Math.floor(G.combo / 5));
+  function updateBestLbl() { $('#bestLbl').innerHTML = G.best ? `Рекорд: <b>${G.best}</b>` : 'Рекорд: пока нет'; }
+
+  // ---------- Log ----------
+  const ticker = $('#ticker'); let tickerT = 0;
+  function makeEv(id, label, color, msg, kind) {
+    const li = document.createElement(kind === 'ticker' ? 'div' : 'li');
+    li.className = 'ev' + (kind && kind !== 'ticker' ? ' ' + kind : '');
+    const a = document.createElement('span'); a.className = 'id'; a.textContent = id;
+    const b = document.createElement('span'); b.className = 'chip'; b.style.setProperty('--c', color); b.textContent = label;
+    const m = document.createElement('span'); m.className = 'msg'; m.textContent = msg;
+    li.append(a, b, m);
+    return li;
+  }
+  function log(id, label, color, msg, kind) {
+    $('#logEmpty').hidden = true;
+    $('#logEmpty').after(makeEv(id, label, color, msg, kind));
+    const evs = logEl.querySelectorAll('.ev');
+    if (evs.length > 40) evs[evs.length - 1].remove();
+    $('#cKilled').textContent = G.total.killed;
+    $('#cEscaped').textContent = G.total.escaped;
+    if (compact) {
+      const t = makeEv(id, label, color, msg, 'ticker');
+      if (kind) t.classList.add(kind);
+      ticker.replaceChildren(t);
+      ticker.classList.add('show');
+      clearTimeout(tickerT);
+      tickerT = setTimeout(() => ticker.classList.remove('show'), 1600);
+    }
+  }
+
+  // ---------- Effects ----------
+  function burst(x, y, color, n, spd, size) {
+    for (let i = 0; i < n; i++) {
+      const an = rand(0, Math.PI * 2), v = rand(spd * 0.3, spd);
+      parts.push({ x, y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, life: rand(0.35, 0.7), age: 0, color, r: rand(size * 0.5, size), star: Math.random() < 0.25 });
+    }
+  }
+  function floatText(x, y, text, color, big) {
+    x = clamp(x, 70, W - 70); y = clamp(y, 30, H - 20);
+    floats.push({ x, y, text, color, age: 0, life: big ? 1.3 : 0.9, big });
+  }
+
+  // ---------- Interaction ----------
+  function kill(b) {
+    const S = SEV[b.sev], scoring = G.state === 'play' && !b.noDamage;
+    bugs.splice(bugs.indexOf(b), 1);
+    const blobs = Array.from({ length: 9 }, () => rand(0.7, 1.25));
+    splats.push({ x: b.x, y: b.y, r: b.size * 1.25, color: S.color, age: 0, life: 3.5, blobs, rot: rand(0, 6) });
+    ripples.push({ x: b.x, y: b.y, r0: b.size, age: 0, life: 0.45, color: S.color });
+    burst(b.x, b.y, S.color, 10 + b.sev * 4, 180 + b.sev * 40, 3 + b.sev * 0.6);
+    burst(b.x, b.y, '#ffffff', 4, 120, 2);
+    sfx.squash(b.sev >= 3);
+    buzz(b.sev >= 3 ? 35 : 15);
+    if (!reduceMotion) G.shake = Math.max(G.shake, b.sev === 4 ? 12 : b.sev === 3 ? 6 : 2);
+    if (!scoring) return;
+    G.combo++;
+    const m = mult(), pts = S.pts * m;
+    G.score += pts;
+    G.stats.killed++; G.total.killed++;
+    G.stats.react.push(b.age); G.total.react.push(b.age);
+    floatText(b.x, b.y - b.size, `+${pts}` + (m > 1 ? ` ×${m}` : ''), S.color);
+    if (m > G.lastMult) { floatText(W / 2, H * 0.22, `КОМБО ×${m}`, '#FFD23F', true); sfx.combo(m); }
+    G.lastMult = m;
+    log(`BUG-${b.id}`, S.name, S.color, `закрыт за ${b.age.toFixed(1)} с`);
+  }
+
+  function onEscape(b) {
+    const S = SEV[b.sev];
+    G.quality = Math.max(0, G.quality - S.dmg);
+    G.combo = 0; G.lastMult = 1;
+    G.stats.escaped++; G.total.escaped++;
+    G.danger = 1;
+    floatText(b.x, b.y, `в прод −${S.dmg}%`, '#FF5C7A');
+    log(`BUG-${b.id}`, S.name, S.color, `утёк в прод · −${S.dmg}%`, 'bad');
+    sfx.escape(); buzz(40);
+    if (G.quality <= 0) gameOver();
+  }
+
+  function targetAt(x, y, touch) {
+    let best = null, bd = Infinity;
+    const minR = touch ? 34 : 22;
+    for (const b of bugs) {
+      const d = Math.hypot(b.x - x, b.y - y), r = Math.max(minR, b.size * (touch ? 1.6 : 1.3));
+      if (d < r && d < bd) { bd = d; best = { type: 'bug', o: b }; }
+    }
+    for (const f of feats) {
+      const dx = Math.abs(f.x - x), dy = Math.abs(f.y - y);
+      if (dx < 34 && dy < 18) { const d = Math.hypot(dx, dy); if (d < bd) { bd = d; best = { type: 'feat', o: f }; } }
+    }
+    return best;
+  }
+
+  function pos(e) { const r = cvs.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  cvs.addEventListener('pointermove', e => { const p = pos(e); mouse.x = p.x; mouse.y = p.y; mouse.in = true; mouse.mouseLike = e.pointerType === 'mouse'; });
+  cvs.addEventListener('pointerleave', () => { mouse.in = false; });
+  cvs.addEventListener('contextmenu', e => e.preventDefault());
+  cvs.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const p = pos(e); mouse.x = p.x; mouse.y = p.y; mouse.in = true; mouse.mouseLike = e.pointerType === 'mouse';
+    mouse.pulse = 1;
+    audio();
+    if (G.state === 'pause') return;
+    const touch = !mouse.mouseLike;
+    if (touch) ripples.push({ x: p.x, y: p.y, r0: 8, age: 0, life: 0.35, color: '#FFD23F' });
+    const scoring = G.state === 'play';
+    const t = targetAt(p.x, p.y, touch);
+    if (scoring) { G.stats.clicks++; G.total.clicks++; }
+    if (t && t.type === 'bug') {
+      const b = t.o;
+      if (scoring && !b.noDamage) { G.stats.hits++; G.total.hits++; }
+      b.hp--; b.flash = 1;
+      if (b.hp <= 0) kill(b);
+      else {
+        sfx.hit(); buzz(10);
+        burst(b.x, b.y, SEV[b.sev].color, 6, 140, 2.5);
+        b.pause = 0; b.turn = rand(-3, 3); b.boost = 0.6;
+        if (!reduceMotion) G.shake = Math.max(G.shake, 3);
+      }
+    } else if (t && t.type === 'feat') {
+      const f = t.o;
+      feats.splice(feats.indexOf(f), 1);
+      burst(f.x, f.y, FEAT_COLOR, 14, 160, 3);
+      sfx.feat();
+      if (scoring) {
+        G.score = Math.max(0, G.score - 50);
+        G.quality = Math.max(0, G.quality - 4);
+        G.combo = 0; G.lastMult = 1;
+        G.stats.feats++;
+        buzz([20, 40, 20]);
+        floatText(f.x, f.y - 20, 'Это фича! −50', FEAT_COLOR);
+        log(`FEAT-${f.id}`, 'Feature', FEAT_COLOR, 'ложный тикет · −50', 'feat');
+        if (G.quality <= 0) gameOver();
+      }
+    } else {
+      burst(p.x, p.y, '#6B7090', 5, 70, 1.8);
+      if (scoring) {
+        sfx.miss();
+        if (G.combo >= 5) floatText(p.x, p.y - 16, 'комбо сброшено', '#9095B4');
+        G.combo = 0; G.lastMult = 1;
+      }
+    }
+  }, { passive: false });
+
+  $('#startBtn').addEventListener('click', newGame);
+  $('#againBtn').addEventListener('click', newGame);
+  $('#nextBtn').addEventListener('click', () => { G.sprint++; G.quality = Math.min(100, G.quality + 15); startSprint(); });
+  $('#resumeBtn').addEventListener('click', resume);
+  $('#quitBtn').addEventListener('click', toMenu);
+  pauseBtn.addEventListener('click', () => (G.state === 'play' ? pause() : resume()));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+
+  const muteBtn = $('#muteBtn'), waves = $('#muteWaves');
+  function toggleMute() {
+    G.muted = !G.muted;
+    $('#muteLbl').textContent = G.muted ? 'Без звука' : 'Звук';
+    waves.setAttribute('d', G.muted ? 'M16 9l5 6M21 9l-5 6' : 'M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12');
+    muteBtn.setAttribute('aria-pressed', String(G.muted));
+    try { localStorage.setItem('bughunt.muted', G.muted ? '1' : '0'); } catch (e) {}
+  }
+  muteBtn.addEventListener('click', toggleMute);
+  try { if (localStorage.getItem('bughunt.muted') === '1') toggleMute(); } catch (e) {}
+  window.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'm' || k === 'ь') toggleMute();
+    if (k === 'p' || k === 'з' || k === 'escape') { if (G.state === 'play') pause(); else if (G.state === 'pause') resume(); }
+  });
+
+  // ---------- Update ----------
+  function update(dt) {
+    if (G.state === 'pause') { mouse.pulse = Math.max(0, mouse.pulse - dt * 6); return; }
+    G.t += dt;
+    if (G.state === 'play') {
+      G.time -= dt;
+      if (G.time <= 0) { G.time = 0; endSprint(); }
+    }
+    G.spawnT -= dt;
+    if (G.spawnT <= 0) {
+      if (G.state === 'play') {
+        const cap = Math.round((5 + G.sprint * 2) * areaK);
+        if (Math.random() < 0.1 + 0.02 * G.sprint && feats.length < (compact ? 1 : 2)) spawnFeat();
+        else if (bugs.length < cap) spawnBug(pickSev(G.sprint), false);
+        G.spawnT = Math.max(0.3, 1.05 - (G.sprint - 1) * 0.12) * rand(0.6, 1.4) / Math.sqrt(areaK) * (compact ? 0.85 : 1);
+      } else if (G.state === 'menu') {
+        if (bugs.length < Math.round(7 * areaK)) spawnBug(pickSev(3), true);
+        if (feats.length < 1 && Math.random() < 0.3) spawnFeat();
+        G.spawnT = rand(0.8, 1.6);
+      } else G.spawnT = 1;
+    }
+
+    const m = compact ? 30 : 42;
+    for (let i = bugs.length - 1; i >= 0; i--) {
+      const b = bugs[i];
+      b.age += dt; b.flash = Math.max(0, b.flash - dt * 6); b.boost = Math.max(0, b.boost - dt);
+      if (!b.escaping && b.age > b.life) { b.escaping = true; b.escA = edgeAngle(b); }
+      let sp = b.v * (1 + b.boost * 1.5);
+      if (b.pause > 0) { b.pause -= dt; sp = 0; }
+      else if (!b.escaping && Math.random() < dt * 0.35) b.pause = rand(0.25, 0.7);
+      b.turn = clamp(b.turn + (Math.random() - 0.5) * 12 * dt, -2.6, 2.6);
+      b.a += b.turn * dt;
+      if (b.escaping) { b.a = lerpAngle(b.a, b.escA, dt * 5); sp = b.v * 1.8; b.pause = 0; }
+      else {
+        if (!b.inside && b.x > m && b.x < W - m && b.y > m && b.y < H - m) b.inside = true;
+        const toC = Math.atan2(H / 2 - b.y, W / 2 - b.x);
+        if (!b.inside) b.a = lerpAngle(b.a, toC, dt * 1.5);
+        else if (b.x < m || b.x > W - m || b.y < m || b.y > H - m) b.a = lerpAngle(b.a, toC, dt * 5);
+      }
+      b.x += Math.cos(b.a) * sp * dt; b.y += Math.sin(b.a) * sp * dt;
+      b.walk += sp * dt;
+      if (b.escaping && (b.x < -60 || b.x > W + 60 || b.y < -60 || b.y > H + 60)) {
+        bugs.splice(i, 1);
+        if (!b.noDamage && G.state === 'play') onEscape(b);
+      }
+    }
+    for (let i = feats.length - 1; i >= 0; i--) {
+      const f = feats[i];
+      f.age += dt; f.a += (Math.random() - 0.5) * 2 * dt;
+      f.x = clamp(f.x + Math.cos(f.a) * 18 * dt, 40, W - 40); f.y = clamp(f.y + Math.sin(f.a) * 18 * dt, 30, H - 30);
+      if (f.age > f.life) feats.splice(i, 1);
+    }
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i]; p.age += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.9; p.vy *= 0.9;
+      if (p.age > p.life) parts.splice(i, 1);
+    }
+    for (const arr of [floats, splats, ripples]) for (let i = arr.length - 1; i >= 0; i--) { arr[i].age += dt; if (arr[i].age > arr[i].life) arr.splice(i, 1); }
+    G.shake = Math.max(0, G.shake - dt * 40);
+    G.danger = Math.max(0, G.danger - dt * 1.8);
+    mouse.pulse = Math.max(0, mouse.pulse - dt * 6);
+  }
+
+  // ---------- HUD ----------
+  const cache = {};
+  function setText(k, el, v) { if (cache[k] !== v) { cache[k] = v; el.textContent = v; } }
+  function updHud() {
+    setText('score', hud.score, String(G.score));
+    setText('combo', hud.combo, `×${mult()}` + (G.combo && !compact ? ` · ${G.combo}` : ''));
+    setText('sprint', hud.sprint, String(G.sprint));
+    const t = Math.ceil(G.time);
+    setText('time', hud.time, `0:${String(t).padStart(2, '0')}`);
+    hud.time.style.color = G.state === 'play' && t <= 5 ? 'var(--coral)' : '';
+    const q = Math.round(G.quality);
+    if (cache.q !== q) {
+      cache.q = q; hud.q.textContent = q + '%';
+      hud.qbar.style.width = q + '%';
+      const [c1, c2] = q > 60 ? ['#3DDC97', '#22B87A'] : q > 30 ? ['#FFD23F', '#F2A900'] : ['#FF5C7A', '#E0294E'];
+      hud.qbar.style.setProperty('--q', c1); hud.qbar.style.setProperty('--q2', c2);
+      hud.q.style.color = c1;
+    }
+  }
+
+  // ---------- Draw ----------
+  function draw() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    if (G.shake > 0) ctx.translate(rand(-1, 1) * G.shake * 0.5, rand(-1, 1) * G.shake * 0.5);
+    if (codeCvs) ctx.drawImage(codeCvs, -8, -8, W + 16, H + 16);
+
+    for (const s of splats) {
+      const a = Math.max(0, 1 - s.age / s.life) * 0.5;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(s.x, s.y); ctx.rotate(s.rot);
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      s.blobs.forEach((k, i) => { const an = i / s.blobs.length * Math.PI * 2; ctx.lineTo(Math.cos(an) * s.r * k, Math.sin(an) * s.r * k); });
+      ctx.closePath(); ctx.fill();
+      s.blobs.forEach((k, i) => { if (i % 3) return; const an = i / s.blobs.length * Math.PI * 2 + 0.3; ctx.beginPath(); ctx.arc(Math.cos(an) * s.r * 1.6, Math.sin(an) * s.r * 1.6, s.r * 0.18 * k, 0, Math.PI * 2); ctx.fill(); });
+      ctx.restore();
+    }
+
+    for (const r of ripples) {
+      const k = r.age / r.life;
+      ctx.save();
+      ctx.globalAlpha = (1 - k) * 0.9; ctx.strokeStyle = r.color; ctx.lineWidth = 3 * (1 - k) + 1;
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.r0 + k * 30, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+
+    for (const f of feats) drawFeat(ctx, f, G.t);
+
+    for (const b of bugs) {
+      const S = SEV[b.sev];
+      if (!b.escaping && !b.noDamage && b.life - b.age < 1.3) {
+        const k = (G.t * 3.5) % 1;
+        ctx.save();
+        ctx.strokeStyle = '#FF5C7A'; ctx.globalAlpha = (1 - k) * 0.85; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.size * (1.35 + k * 0.8), 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+      drawBug(ctx, b.x, b.y, b.a, b.size, S, b.walk, b.flash, b.noDamage && G.state !== 'menu' ? 0.65 : 1, G.t, b.seed);
+      if (S.hp > 1) {
+        const n = S.hp, gap = 10, x0 = b.x - (n - 1) * gap / 2, y0 = b.y - b.size * 1.6;
+        ctx.save();
+        ctx.fillStyle = 'rgba(12,13,26,.7)';
+        roundRect(ctx, x0 - 8, y0 - 6, (n - 1) * gap + 16, 12, 6); ctx.fill();
+        for (let i = 0; i < n; i++) {
+          ctx.beginPath(); ctx.arc(x0 + i * gap, y0, 3.2, 0, Math.PI * 2);
+          ctx.fillStyle = i < b.hp ? S.color : 'rgba(255,255,255,.2)'; ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+
+    for (const p of parts) {
+      ctx.globalAlpha = Math.max(0, 1 - p.age / p.life);
+      ctx.fillStyle = p.color;
+      const r = p.r * (1 - p.age / p.life * 0.5);
+      if (p.star) sparkle(ctx, p.x, p.y, r * 1.8, p.age * 8);
+      else { ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const f of floats) {
+      const k = f.age / f.life;
+      ctx.globalAlpha = Math.max(0, 1 - k * k);
+      const sc = f.big ? 1 + Math.max(0, 0.3 - f.age) * 2 : 1 + Math.max(0, 0.12 - f.age) * 3;
+      const base = f.big ? (compact ? 24 : 30) : (compact ? 14 : 15);
+      ctx.font = `${f.big ? 800 : 700} ${Math.round(base * sc)}px "Unbounded", system-ui, sans-serif`;
+      ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(10,10,22,.85)'; ctx.lineJoin = 'round';
+      const y = f.y - k * (f.big ? 20 : 36);
+      ctx.strokeText(f.text, f.x, y);
+      ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    if (G.danger > 0) {
+      const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.7);
+      g.addColorStop(0, 'rgba(255,92,122,0)'); g.addColorStop(1, `rgba(255,92,122,${0.35 * G.danger})`);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+
+    if (G.state === 'play' || G.state === 'pause') {
+      ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(0, 0, W, 4);
+      const tg = ctx.createLinearGradient(0, 0, W, 0);
+      if (G.time <= 5) { tg.addColorStop(0, '#FF5C7A'); tg.addColorStop(1, '#FF9A4D'); }
+      else { tg.addColorStop(0, '#FFD23F'); tg.addColorStop(1, '#3DDC97'); }
+      ctx.fillStyle = tg; ctx.fillRect(0, 0, W * (G.time / SPRINT_LEN), 4);
+    }
+
+    if (mouse.in && mouse.mouseLike && G.state !== 'pause') {
+      const t = targetAt(mouse.x, mouse.y, false);
+      const col = t ? (t.type === 'feat' ? FEAT_COLOR : '#FF5C7A') : '#FFD23F';
+      const r = (t ? 13 : 17) - mouse.pulse * 6;
+      ctx.save(); ctx.translate(mouse.x, mouse.y);
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.shadowColor = col; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.rotate(t ? G.t * 2 : 0);
+      for (let i = 0; i < 4; i++) { ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.moveTo(r + 3, 0); ctx.lineTo(r + 9, 0); ctx.stroke(); }
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawMascot() {
+    if ($('#ovMenu').hidden) return;
+    const w = 84, h = 72;
+    mctx.setTransform(2, 0, 0, 2, 0, 0);
+    mctx.clearRect(0, 0, w, h);
+    const t = G.t;
+    const bob = Math.sin(t * 6) * 1.5;
+    drawBug(mctx, 40, 38 + bob, -Math.PI / 2 + Math.sin(t * 1.6) * 0.25, 20, SEV[2], t * 90, 0, 1, t, 0.5);
+    mctx.fillStyle = '#FFD23F';
+    sparkle(mctx, 70, 14, 5 + Math.sin(t * 4) * 1.5, t);
+    mctx.fillStyle = '#A594FF';
+    sparkle(mctx, 12, 58, 4 + Math.cos(t * 5) * 1.2, -t);
+  }
+
+  // ---------- Legend ----------
+  function buildLegend() {
+    const ul = $('#legend');
+    const rows = SEV.map((s, i) => ({ name: s.name, desc: s.desc + (s.hp > 1 ? ` · ${s.hp} удара` : ''), pts: `+${s.pts}`, color: s.color, i }));
+    rows.push({ name: 'Фича', desc: 'Не баг! Не трогай', pts: '−50', color: FEAT_COLOR, i: -1 });
+    for (const r of rows) {
+      const li = document.createElement('li'); li.style.setProperty('--c', r.color);
+      const c = document.createElement('canvas'); c.width = 96; c.height = 96;
+      const x = c.getContext('2d'); x.scale(2, 2);
+      if (r.i >= 0) {
+        const sz = Math.min(14, 9 + r.i * 1.2);
+        drawBug(x, 22, 26, -Math.PI / 2, sz, SEV[r.i], r.i * 7, 0, 1, 1, 0);
+      } else {
+        const g = x.createLinearGradient(0, 16, 0, 32);
+        g.addColorStop(0, '#C3B8FF'); g.addColorStop(1, FEAT_COLOR);
+        x.fillStyle = g; roundRect(x, 5, 15, 38, 18, 9); x.fill();
+        x.fillStyle = '#17132E'; sparkle(x, 24, 24, 5.5, 0.3);
+        x.fillStyle = '#fff'; sparkle(x, 42, 13, 3.5, 0);
+      }
+      const n = document.createElement('div'); n.className = 'n'; n.textContent = r.name;
+      const d = document.createElement('div'); d.className = 'd'; d.textContent = r.desc;
+      const p = document.createElement('span'); p.className = 'p'; p.textContent = r.pts;
+      li.append(c, n, d, p); ul.append(li);
+    }
+  }
+
+  // ---------- Boot ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    update(dt); draw(); updHud(); drawMascot();
+    requestAnimationFrame(frame);
+  }
+  G.total = newStats(); G.stats = newStats();
+  buildLegend(); updateBestLbl();
+  resize();
+  new ResizeObserver(resize).observe(wrap);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(buildCode);
+  for (let i = 0; i < 4; i++) { spawnBug(pickSev(3), true); const b = bugs[bugs.length - 1]; b.x = rand(60, W - 60); b.y = rand(60, H - 60); b.inside = true; }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
