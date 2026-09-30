@@ -74,6 +74,8 @@
   *, *::before, *::after { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
+  /* no double-tap zoom anywhere (rapid taps are the core mechanic); pinch-zoom stays available */
+  html { touch-action: manipulation; }
   body {
     background:
       radial-gradient(800px 500px at 90% -15%, rgba(165,148,255,.22) 0%, transparent 60%),
@@ -1070,6 +1072,11 @@
   cvs.addEventListener('pointermove', e => { const p = pos(e); mouse.x = p.x; mouse.y = p.y; mouse.in = true; mouse.mouseLike = e.pointerType === 'mouse'; });
   cvs.addEventListener('pointerleave', () => { mouse.in = false; });
   cvs.addEventListener('contextmenu', e => e.preventDefault());
+  // iOS Safari can still zoom on fast double taps despite touch-action; cancelling the touch default stops it.
+  // Pointer events have already fired by then, so squashing is unaffected.
+  cvs.addEventListener('touchstart', e => { if (e.touches.length === 1) e.preventDefault(); }, { passive: false });
+  cvs.addEventListener('touchend', e => e.preventDefault(), { passive: false });
+  cvs.addEventListener('dblclick', e => e.preventDefault());
   cvs.addEventListener('pointerdown', e => {
     e.preventDefault();
     const p = pos(e); mouse.x = p.x; mouse.y = p.y; mouse.in = true; mouse.mouseLike = e.pointerType === 'mouse';
