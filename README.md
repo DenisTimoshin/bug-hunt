@@ -4,7 +4,7 @@
 
 **Играть:** https://bug-hunter.denis-timoshin.ru/
 
-Автор: **d_timoshin** · курс по тестированию: https://stepik.org/a/254843
+Автор: **Денис Тимошин** · курс по тестированию: https://stepik.org/a/254843
 
 ## Как запустить
 
